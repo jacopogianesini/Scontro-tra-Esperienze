@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Confronto 1-vs-1</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; padding: 2em; }
+    .choice-btn { margin: 1em; padding: 1em 2em; font-size: 1.2em; cursor: pointer; }
+    #results { margin-top: 2em; text-align: left; max-width: 600px; margin-left: auto; margin-right: auto; display: none; }
+  </style>
+</head>
+<body>
+  <h1>Scontro tra Esperienze</h1>
+  <div id="choice-container">
+    <button id="choiceA" class="choice-btn"></button>
+    <span>VS</span>
+    <button id="choiceB" class="choice-btn"></button>
+  </div>
+
+  <div id="results">
+    <h2>Classifica</h2>
+    <ol id="ranking"></ol>
+    <button onclick="exportCSV()">Esporta CSV</button>
+  </div>
+
+  <script>
+    const items = [
+      "Esp.1", "Esp.2", "Esp.3", "Esp.4", "Esp.5", "Esp.6",
+      "Esp.7", "Esp.8", "Esp.9", "Esp.10", "Esp.11", "Esp.12",
+      "Esp.13", "Esp.14", "Esp.15"
+    ];
+
+    const scores = Object.fromEntries(items.map(item => [item, 0]));
+    const usedPairs = new Set();
+    let currentPair = [];
+
+    function generateAllPairs() {
+      const pairs = [];
+      for (let i = 0; i < items.length; i++) {
+        for (let j = i + 1; j < items.length; j++) {
+          pairs.push([items[i], items[j]]);
+        }
+      }
+      return pairs;
+    }
+
+    function getRandomPair() {
+      const remainingPairs = generateAllPairs().filter(pair => !usedPairs.has(pair.join('-')));
+      if (remainingPairs.length === 0) {
+        document.getElementById('choice-container').style.display = 'none';
+        document.getElementById('results').style.display = 'block';
+        updateRanking();
+        return null;
+      }
+      const randomPair = remainingPairs[Math.floor(Math.random() * remainingPairs.length)];
+      usedPairs.add(randomPair.join('-'));
+      return randomPair;
+    }
+
+    function updateButtons() {
+      currentPair = getRandomPair();
+      if (currentPair === null) return;
+      document.getElementById('choiceA').textContent = currentPair[0];
+      document.getElementById('choiceB').textContent = currentPair[1];
+    }
+
+    function registerWin(winner) {
+      scores[winner]++;
+      updateButtons();
+    }
+
+    function updateRanking() {
+      const list = document.getElementById('ranking');
+      const sorted = Object.entries(scores)
+        .sort(([,a],[,b]) => b - a);
+      list.innerHTML = sorted.map(([item, score]) => `<li>${item}: ${score} vittorie</li>`).join('');
+    }
+
+    function exportCSV() {
+      const sorted = Object.entries(scores).sort(([,a],[,b]) => b - a);
+      const csv = 'Elemento,Vittorie\n' + sorted.map(([item, score]) => `${item},${score}`).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.setAttribute('href', url);
+      a.setAttribute('download', 'classifica.csv');
+      a.click();
+    }
+
+    document.getElementById('choiceA').addEventListener('click', () => registerWin(currentPair[0]));
+    document.getElementById('choiceB').addEventListener('click', () => registerWin(currentPair[1]));
+
+    updateButtons();
+  </script>
+</body>
+</html>
